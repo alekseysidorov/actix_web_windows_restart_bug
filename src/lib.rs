@@ -1,7 +1,7 @@
 use actix_rt::time::delay_for;
 use actix_web::{dev::Server, middleware, web, App, HttpRequest, HttpServer};
 
-use std::{io, time::Duration};
+use std::{io, net::TcpListener, time::Duration};
 
 #[derive(Debug, Clone, Default)]
 pub struct ApiManager {
@@ -20,7 +20,7 @@ impl ApiManager {
         Self::default()
     }
 
-    pub async fn start_server(&mut self) -> io::Result<()> {
+    pub async fn start_server(&mut self, listener: TcpListener) -> io::Result<()> {
         assert!(
             self.server.is_none(),
             "An attempt to start another server instance"
@@ -28,14 +28,14 @@ impl ApiManager {
 
         log::trace!("Start server requested");
 
-        let addr = "127.0.0.1:8080";
+        let addr = listener.local_addr()?;
         let server = HttpServer::new(|| {
             App::new()
                 .wrap(middleware::Logger::default())
                 .service(web::resource("/ping").to(ping))
         })
         .disable_signals()
-        .bind(addr)?
+        .listen(listener)?
         .run();
         self.server = Some(server);
 

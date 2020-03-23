@@ -4,6 +4,7 @@ use futures::{prelude::*, stream};
 
 use std::{
     io,
+    net::TcpListener,
     sync::atomic::{AtomicU32, Ordering},
     time::Duration,
 };
@@ -13,7 +14,8 @@ async fn run_manager() -> io::Result<()> {
 
     let active_time = 15;
     loop {
-        manager.start_server().await?;
+        let listener = TcpListener::bind("127.0.0.1:8080")?;
+        manager.start_server(listener).await?;
         log::info!("Server will active for the next {} seconds.", active_time);
         delay_for(Duration::from_secs(active_time)).await;
         manager.stop_server().await;
