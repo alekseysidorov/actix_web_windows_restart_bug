@@ -34,6 +34,7 @@ impl ApiManager {
                 .wrap(middleware::Logger::default())
                 .service(web::resource("/ping").to(ping))
         })
+        .disable_signals()
         .bind(addr)?
         .run();
         self.server = Some(server);
