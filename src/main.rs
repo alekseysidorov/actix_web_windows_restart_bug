@@ -7,6 +7,7 @@ use std::{
     net::TcpListener,
     sync::atomic::{AtomicU32, Ordering},
     time::Duration,
+    os::windows::io::{IntoRawSocket, FromRawSocket},
 };
 
 async fn run_manager() -> io::Result<()> {
@@ -15,10 +16,16 @@ async fn run_manager() -> io::Result<()> {
     let active_time = 15;
     loop {
         let listener = TcpListener::bind("127.0.0.1:8080")?;
+        let raw = listener.into_raw_socket();
+        let listener = unsafe { TcpListener::from_raw_socket(raw) };
+
         manager.start_server(listener).await?;
         log::info!("Server will active for the next {} seconds.", active_time);
         delay_for(Duration::from_secs(active_time)).await;
         manager.stop_server().await;
+
+        let listener2 = unsafe { TcpListener::from_raw_socket(raw) };
+        drop(listener2);
 
         log::info!("Server restart requested");
     }
